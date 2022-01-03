@@ -1,0 +1,16 @@
+﻿@page "/map"
+@using BlazorServerJsInterOp.JsLib
+@inject IJSRuntime JsRunTime
+
+<button class="btn btn-primary" @onclick="@InitializeMap">Get Current Time</button>
+
+<div id="map" style="width: 600px; height: 400px; position: relative; outline: none;"></div>
+
+@code {
+    async void InitializeMap()
+    {
+        var dateTime = await JsRunTime.InvokeAsync<string>(JsLib.InitializeMap);
+
+        StateHasChanged();
+    }
+}
