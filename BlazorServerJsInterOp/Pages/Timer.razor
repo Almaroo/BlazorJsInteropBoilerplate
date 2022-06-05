@@ -1,17 +1,37 @@
 ﻿@page "/time"
-@using BlazorServerJsInterOp.JsLib
+@using BlazorServerJsInterOp.MyLib
 @inject IJSRuntime JsRunTime
+
+@implements IAsyncDisposable
 
 <button class="btn btn-primary" @onclick="@GetCurrentTime">Get Current Time</button>
 
 @CurrentTime
 
 @code {
-    private MarkupString CurrentTime = new MarkupString("");
+    private MarkupString CurrentTime = new("");
 
+    private Lazy<IJSObjectReference> MapModule = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            MapModule = new(await JsRunTime.InvokeAsync<IJSObjectReference>("import", $"./js/{MyLib.FileName}"));
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (MapModule.IsValueCreated)
+        {
+            await MapModule.Value.DisposeAsync();
+        }
+    }
+    
     async void GetCurrentTime()
     {
-        var dateTime = await JsRunTime.InvokeAsync<string>(JsLib.GetCurrentTime);
+        var dateTime = await MapModule.Value.InvokeAsync<string>(MyLib.Methods.GetCurrentTime);
 
         CurrentTime = new MarkupString(dateTime);
 

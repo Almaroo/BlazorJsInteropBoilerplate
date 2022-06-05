@@ -1,16 +1,37 @@
 ﻿@page "/map"
-@using BlazorServerJsInterOp.JsLib
+@using BlazorServerJsInterOp.MyLib
 @inject IJSRuntime JsRunTime
+
+@implements IAsyncDisposable
 
 <button class="btn btn-primary" @onclick="@InitializeMap">Get Current Time</button>
 
 <div id="map" style="width: 600px; height: 400px; position: relative; outline: none;"></div>
 
 @code {
+    private Lazy<IJSObjectReference> MapModule = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            MapModule = new(await JsRunTime.InvokeAsync<IJSObjectReference>("import", $"./js/{MyLib.FileName}"));
+        }
+    }
+
     async void InitializeMap()
     {
-        var dateTime = await JsRunTime.InvokeAsync<string>(JsLib.InitializeMap);
+        var dateTime = await MapModule.Value.InvokeAsync<string>(MyLib.Methods.InitializeMap);
 
         StateHasChanged();
     }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (MapModule.IsValueCreated)
+        {
+            await MapModule.Value.DisposeAsync();
+        }
+    }
+
 }

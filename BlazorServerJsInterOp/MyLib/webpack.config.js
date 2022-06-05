@@ -1,6 +1,12 @@
 ﻿const path = require("path");
 
+const fileName = "my_lib.js";
+const libraryName = "MyLib";
+
 module.exports = {
+    experiments: {
+        outputModule: true,
+    },
     module: {
         rules: [
             {
@@ -14,7 +20,9 @@ module.exports = {
     },
     output: {
         path: path.resolve(__dirname, '../wwwroot/js'),
-        filename: "my_lib.js",
-        library: "MyLib"
+        filename: fileName,
+        library: {
+            type: "module",
+        },
     }
 };

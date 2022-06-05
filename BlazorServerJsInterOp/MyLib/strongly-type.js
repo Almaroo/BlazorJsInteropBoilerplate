@@ -6,10 +6,12 @@ class StronglyTypedCSharpFileBuilder {
     #fileName;
     #libraryName;
     #methods;
+    #outputFileName;
     
     constructor() {
         this.namespace = '';
         this.fileName = '';
+        this.outputFileName = '';
         this.libraryName = '';
         this.methods = [];
     }
@@ -22,6 +24,11 @@ class StronglyTypedCSharpFileBuilder {
     withFileName(fileName) {
         if (fileName && typeof fileName !== 'string') throw new Error('fileName must be string cannot be null or empty');
         this.fileName = fileName;
+    }
+
+    withOutputFileName(outputFileName) {
+        if (fileName && typeof fileName !== 'string') throw new Error('outputFileName must be string cannot be null or empty');
+        this.outputFileName = outputFileName;
     }
     
     withLibraryName(libraryName) {
@@ -41,7 +48,13 @@ namespace ${namespace}.${fileName}
 {
     public static class ${fileName} 
     {
-        ${this.methods.map(method => `public static string ${method} = "${libraryName}.${method}";`).join('\n\t\t')}
+        public static string FileName => "${this.outputFileName}";
+        public static string LibraryName => "${this.libraryName}";
+        
+        public static class Methods
+        {
+            ${this.methods.map(method => `public static string ${method} = "${method}";`).join('\n\t\t\t')}
+        }
     }
 }
 `
@@ -52,11 +65,13 @@ const namespace = path.basename(path.dirname(__dirname));
 const fileName = path.basename(__dirname);
 
 const configPath = path.resolve(__dirname, './webpack.config.js');
-const libraryNameRegEx = /library: "(?<libraryName>[a-zA-Z]+)"/;
+const libraryNameRegEx = /libraryName = "(?<libraryName>[a-zA-Z]+)"/;
+const outputFileRegEx = /fileName = "(?<fileName>[a-zA-Z._]+)"/;
 const configData = fs.readFileSync(configPath, 'utf8', (err) => {
     if (err) throw err;
 });
 const libraryName = configData.match(libraryNameRegEx).groups['libraryName'];
+const outputFileName = configData.match(outputFileRegEx).groups['fileName'];
 
 const indexPath = path.resolve(__dirname, './src/index.js');
 const methodRegEx = /export function (?<methodName>[a-zA-Z]+)\(\w*\)/g;
@@ -70,6 +85,7 @@ const builder = new StronglyTypedCSharpFileBuilder();
 builder.withFileName(fileName);
 builder.withLibraryName(libraryName);
 builder.withNamespace(namespace);
+builder.withOutputFileName(outputFileName);
 
 for (const methodName of methodNames) {
     builder.withMethod(methodName.groups['methodName']);
